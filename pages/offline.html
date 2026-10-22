@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https: http:" />
+    <title>لا يوجد اتصال — تاجر برو</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="offline">
+      <div class="card">
+        <img src="../assets/icon.png" alt="" class="logo" />
+        <h1>تعذر الاتصال بالنظام</h1>
+        <p class="muted">تأكد من اتصال الإنترنت. سيعود البرنامج تلقائياً عند رجوع الاتصال.</p>
+        <p class="muted"><span class="spinner"></span><span id="state">جارٍ المحاولة...</span></p>
+        <p class="muted" dir="ltr" id="reason"></p>
+        <div class="actions">
+          <button type="button" class="btn primary" id="retry">إعادة المحاولة الآن</button>
+        </div>
+      </div>
+    </main>
+    <script src="offline.js"></script>
+  </body>
+</html>

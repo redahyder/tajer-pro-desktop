@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'" />
+    <title>إعدادات تاجر برو</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <img src="../assets/icon.png" alt="" class="logo" />
+        <div>
+          <h1>إعدادات التطبيق</h1>
+          <p class="muted">الإصدار <span id="version">—</span></p>
+        </div>
+      </header>
+
+      <form id="form" class="card">
+        <section>
+          <h2>الاتصال بالنظام</h2>
+          <label class="field">
+            <span>رابط النظام</span>
+            <input id="serverUrl" dir="ltr" required placeholder="https://..." />
+            <small class="muted">نفس الرابط الذي تفتحه في المتصفح. <button type="button" class="link" id="resetServer">إرجاع الافتراضي</button></small>
+          </label>
+          <label class="field">
+            <span>الصفحة عند فتح البرنامج</span>
+            <select id="startPage">
+              <option value="dashboard">لوحة التحكم</option>
+              <option value="pos">نقطة البيع (الكاشير)</option>
+            </select>
+          </label>
+        </section>
+
+        <section>
+          <h2>الطابعات</h2>
+          <label class="check">
+            <input type="checkbox" id="silentPrint" />
+            <span>طباعة مباشرة بدون نافذة اختيار الطابعة <small class="muted">(موصى به للكاشير)</small></span>
+          </label>
+          <div class="printer">
+            <label class="field">
+              <span>طابعة الإيصالات (حرارية 80 / 58 ملم)</span>
+              <select id="printer-receipt"></select>
+            </label>
+            <button type="button" class="btn ghost" data-test="receipt">طباعة تجريبية</button>
+          </div>
+          <div class="printer">
+            <label class="field">
+              <span>طابعة الفواتير (A4)</span>
+              <select id="printer-invoice"></select>
+            </label>
+            <button type="button" class="btn ghost" data-test="invoice">طباعة تجريبية</button>
+          </div>
+          <div class="printer">
+            <label class="field">
+              <span>طابعة الملصقات والباركود</span>
+              <select id="printer-label"></select>
+            </label>
+            <button type="button" class="btn ghost" data-test="label">طباعة تجريبية</button>
+          </div>
+          <div class="printer">
+            <label class="field">
+              <span>طابعة ملصقات الشحن (10×15 سم)</span>
+              <select id="printer-shipping"></select>
+            </label>
+            <button type="button" class="btn ghost" data-test="shipping">طباعة تجريبية</button>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="usePrinterPaper" />
+            <span>استخدام مقاس الورق المضبوط في تعريف الطابعة <small class="muted">(فعّله فقط إذا خرجت الطباعة بمقاس غير صحيح)</small></span>
+          </label>
+          <label class="field narrow">
+            <span>عدد نسخ الإيصال</span>
+            <input id="receiptCopies" type="number" min="1" max="5" />
+          </label>
+        </section>
+
+        <section>
+          <h2>التشغيل</h2>
+          <label class="check">
+            <input type="checkbox" id="openAtLogin" />
+            <span>تشغيل البرنامج تلقائياً مع ويندوز</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="fullscreenOnStart" />
+            <span>فتح بملء الشاشة (مناسب لجهاز الكاشير)</span>
+          </label>
+        </section>
+
+        <footer class="actions">
+          <span id="status" class="status" role="status"></span>
+          <button type="button" class="btn ghost" id="close">إغلاق</button>
+          <button type="submit" class="btn primary">حفظ الإعدادات</button>
+        </footer>
+      </form>
+    </main>
+    <script src="settings.js"></script>
+  </body>
+</html>

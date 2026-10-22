@@ -1,0 +1,85 @@
+{
+  "name": "tajer-pro-desktop",
+  "productName": "Tajer Pro",
+  "version": "1.0.0",
+  "description": "تاجر برو — تطبيق سطح المكتب لنظام إدارة المبيعات والمخزون",
+  "author": "Tajer Pro",
+  "license": "UNLICENSED",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/redahyder/tajer-pro-desktop.git"
+  },
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.tajerpro.desktop",
+    "productName": "Tajer Pro",
+    "executableName": "TajerPro",
+    "copyright": "Tajer Pro",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "config.js",
+      "preload.js",
+      "settings-preload.js",
+      "pages/**",
+      "assets/**",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "TajerPro-Setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "تاجر برو",
+      "uninstallDisplayName": "تاجر برو",
+      "installerLanguages": [
+        "ar_SA"
+      ],
+      "language": "1025",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "TajerPro-Portable.${ext}"
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true
+    }
+  }
+}
