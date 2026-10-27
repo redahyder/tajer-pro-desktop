@@ -1,60 +1,92 @@
-# بناء تطبيق ويندوز (ملف التثبيت + النسخة المحمولة) ونشره في Releases
-# يعمل تلقائياً عند أي تغيير على الفرع main، أو يدوياً من تبويب Actions.
-# رقم الإصدار يؤخذ من package.json وينشأ وسم vX.Y.Z تلقائياً.
-# رابط التحميل الثابت لآخر نسخة:
-#   https://github.com/redahyder/tajer-pro-desktop/releases/latest/download/TajerPro-Setup.exe
-name: Build Windows app
-
+name: Verify Windows app and prepare signed releases
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "README.md"
+    paths-ignore: [README.md]
+  pull_request:
   workflow_dispatch:
-
+    inputs:
+      publish:
+        description: Build a SIGNED draft release (requires certificate secrets and publisher subject)
+        type: boolean
+        default: false
 permissions:
-  contents: write
-
+  contents: read
 concurrency:
-  group: desktop-build
+  group: desktop-build-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
-  windows:
+  verify:
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 22
           cache: npm
-
-      - run: npm ci
-
-      - name: Read version
-        id: version
-        shell: bash
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Build installer
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Check application and local-page scripts
+        shell: pwsh
+        run: |
+          $files = @('main.js','config.js','preload.js','settings-preload.js','pages/offline.js','pages/settings.js')
+          foreach ($file in $files) { node --check $file; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
+      - name: Build private Windows test candidates
         run: npx electron-builder --win --x64 --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-
-      # الملفات تُنشر في Releases مباشرة (لا تُحسب من مساحة Artifacts في حساب GitHub)
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          target_commitish: ${{ github.sha }}
-          name: تاجر برو لسطح المكتب ${{ steps.version.outputs.version }}
-          make_latest: "true"
-          files: dist/*.exe
-          body: |
-            ## تاجر برو — تطبيق ويندوز
-            - **TajerPro-Setup.exe**: ملف التثبيت (يضيف اختصاراً على سطح المكتب وقائمة ابدأ) — موصى به.
-            - **TajerPro-Portable.exe**: نسخة تعمل مباشرة بدون تثبيت.
-
-            بعد التثبيت سجّل دخولك باسم المستخدم وكلمة المرور الخاصة بحسابك في منصة تاجر برو.
-            ملاحظة: قد يظهر تحذير Windows SmartScreen لأن البرنامج غير موقّع رقمياً — اضغط "معلومات إضافية" ثم "تشغيل على أي حال".
+          name: windows-test-candidates-unsigned
+          path: dist/*.exe
+          retention-days: 1
+          if-no-files-found: error
+  signed-release:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: verify
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+      WINDOWS_PUBLISHER_SUBJECT: ${{ vars.WINDOWS_PUBLISHER_SUBJECT }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Require signing configuration
+        shell: pwsh
+        run: |
+          if (-not $env:CSC_LINK -or -not $env:CSC_KEY_PASSWORD -or -not $env:WINDOWS_PUBLISHER_SUBJECT) { throw 'A signing certificate, password and expected certificate subject are required. Public unsigned releases are disabled.' }
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Build with mandatory signing
+        run: npx electron-builder --win --x64 --publish never --config.forceCodeSigning=true
+      - name: Verify Authenticode and generate checksums
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path dist/*.exe -File
+          if ($files.Count -lt 2) { throw 'Expected installer and portable executable' }
+          $lines = foreach ($file in $files) {
+            $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+            if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -ne $env:WINDOWS_PUBLISHER_SUBJECT) { throw "Invalid or unexpected signer: $($file.Name)" }
+            "$((Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLower())  $($file.Name)"
+          }
+          $lines | Set-Content -LiteralPath dist/SHA256SUMS.txt -Encoding utf8
+      - name: Create an immutable signed draft for pilot acceptance
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          gh release view "v$version" --repo "${{ github.repository }}" 2>$null
+          if ($LASTEXITCODE -eq 0) { throw 'This release already exists. Bump the version; never overwrite a released installer.' }
+          $assets = @(Get-ChildItem -Path dist/*.exe -File | ForEach-Object { $_.FullName }) + @((Resolve-Path dist/SHA256SUMS.txt).Path)
+          gh release create "v$version" --repo "${{ github.repository }}" --target "${{ github.sha }}" --draft --title "Tajer Pro $version — signed pilot" --notes "Signed candidate. Validate printers/scanners and shop pilots before publishing. No automatic public promotion." @assets
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

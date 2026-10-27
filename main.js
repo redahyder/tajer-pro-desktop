@@ -539,6 +539,7 @@ function buildMenu() {
       submenu: [
         { label: "لوحة التحكم", accelerator: "CmdOrCtrl+1", click: () => go("/admin") },
         { label: "نقطة البيع (الكاشير)", accelerator: "CmdOrCtrl+2", click: () => go("/admin/pos") },
+        { label: "الكاشير المؤقت والمزامنة", accelerator: "CmdOrCtrl+Shift+2", click: () => go("/admin/pos/offline") },
         { label: "المتجر الإلكتروني", accelerator: "CmdOrCtrl+3", click: () => go("/") },
         { type: "separator" },
         { label: "إعدادات التطبيق والطابعات", accelerator: "CmdOrCtrl+,", click: openSettings },
