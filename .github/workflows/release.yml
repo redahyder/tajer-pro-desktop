@@ -87,5 +87,6 @@ jobs:
           $version = node -p "require('./package.json').version"
           gh release view "v$version" --repo "${{ github.repository }}" 2>$null
           if ($LASTEXITCODE -eq 0) { throw 'This release already exists. Bump the version; never overwrite a released installer.' }
-          gh release create "v$version" --repo "${{ github.repository }}" --target "${{ github.sha }}" --draft --title "Tajer Pro $version — signed pilot" --notes "Signed candidate. Validate printers/scanners and shop pilots before publishing. No automatic public promotion." dist/*.exe dist/SHA256SUMS.txt
+          $assets = @(Get-ChildItem -Path dist/*.exe -File | ForEach-Object { $_.FullName }) + @((Resolve-Path dist/SHA256SUMS.txt).Path)
+          gh release create "v$version" --repo "${{ github.repository }}" --target "${{ github.sha }}" --draft --title "Tajer Pro $version — signed pilot" --notes "Signed candidate. Validate printers/scanners and shop pilots before publishing. No automatic public promotion." @assets
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
