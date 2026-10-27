@@ -19,3 +19,5 @@ async function check() {
 document.getElementById("retry").addEventListener("click", retry);
 window.addEventListener("online", retry);
 setInterval(check, 5000);
+
+document.getElementById("offline-pos").addEventListener("click", () => { try { const url = new URL(target); if (!["https:", "http:"].includes(url.protocol)) return; location.href = new URL("/admin/pos/offline", url.origin).href; } catch { /* invalid target */ } });
